@@ -5,6 +5,7 @@ import com.openhtmltopdf.layout.SharedContext;
 import com.openhtmltopdf.render.RenderingContext;
 import org.w3c.dom.Element;
 
+import java.awt.Point;
 import java.util.List;
 
 public interface SVGDrawer {
@@ -23,4 +24,8 @@ public interface SVGDrawer {
 	 * @return the height of the SVG in pixels.
 	 */
 	public int getSVGHeight(Element e);
+
+	public Integer parseLength(String attrValue);
+
+	public Point parseDimensions(Element e);
 }

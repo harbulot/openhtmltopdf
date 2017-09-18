@@ -47,7 +47,50 @@ public class PdfBoxReplacedElementFactory implements ReplacedElementFactory {
         String nodeName = e.getNodeName();
 
         if (nodeName.equals("svg") && _svgImpl != null) {
-            return new PdfBoxSVGReplacedElement(e, _svgImpl, cssWidth, cssHeight, c.getSharedContext().getDotsPerPixel());
+            PdfBoxSVGReplacedElement pdfBoxSVGReplacedElement = new PdfBoxSVGReplacedElement(e, _svgImpl, c.getSharedContext().getDotsPerPixel());
+            
+            boolean hasMaxHeight = !box.getStyle().isMaxHeightNone();
+            boolean hasMaxWidth = !box.getStyle().isMaxWidthNone();
+            boolean hasMaxProperty = hasMaxWidth || hasMaxHeight;
+            if (cssWidth == -1 && cssHeight == -1) {
+                if (hasMaxProperty) {
+                    long maxWidth = box.getStyle().asLength(c, CSSName.MAX_WIDTH).value();
+                    long maxHeight = box.getStyle().asLength(c, CSSName.MAX_HEIGHT).value();
+                    int intrinsicHeight = pdfBoxSVGReplacedElement.getIntrinsicHeight();
+                    int intrinsicWidth = pdfBoxSVGReplacedElement.getIntrinsicWidth();
+
+                    if (hasMaxWidth && hasMaxHeight) {
+                        double rw = (double) intrinsicWidth / (double) maxWidth;
+                        double rh = (double) intrinsicHeight / (double) maxHeight;
+
+                        if (rw > rh) {
+                            pdfBoxSVGReplacedElement.scale((int) maxWidth, -1);
+                        } else {
+                            pdfBoxSVGReplacedElement.scale(-1, (int) maxHeight);
+                        }
+                    } else if (hasMaxWidth && intrinsicWidth > maxWidth) {
+                        pdfBoxSVGReplacedElement.scale((int) maxWidth, -1);
+                    } else if (hasMaxHeight && intrinsicHeight > maxHeight) {
+                        pdfBoxSVGReplacedElement.scale(-1, (int) maxHeight);
+                    }
+                }
+            } else {
+                if (hasMaxProperty) {
+                    long maxWidth = box.getStyle().asLength(c, CSSName.MAX_WIDTH).value();
+                    long maxHeight = box.getStyle().asLength(c, CSSName.MAX_HEIGHT).value();
+                    if (cssHeight > maxHeight && cssHeight >= cssWidth) {
+                        pdfBoxSVGReplacedElement.scale(-1, (int) maxHeight);
+                    } else if (cssWidth > maxWidth) {
+                        pdfBoxSVGReplacedElement.scale((int) maxWidth, -1);
+                    } else {
+                        pdfBoxSVGReplacedElement.scale(cssWidth, cssHeight);
+                    }
+                } else {
+                    pdfBoxSVGReplacedElement.scale(cssWidth, cssHeight);
+                }
+            }
+            
+            return pdfBoxSVGReplacedElement;
         } else if (nodeName.equals("img")) {
             String srcAttr = e.getAttribute("src");
             if (srcAttr != null && srcAttr.length() > 0) {
